@@ -3,7 +3,7 @@
 from flask import Flask, jsonify, request
 from bs4 import BeautifulSoup
 from urllib.request import urlopen, Request
-import requests
+
 import os
 
 #PARTE2
@@ -12,11 +12,11 @@ app = Flask(__name__)
 #PARTE3
 @app.route('/api/v1/filmes', methods=['GET'])
 def filmes():
-  page = requests.get("http://cdfuberaba.auttran.com/ajax/fulltable.php?codlinha=100&city=UBEN&d=")
+  html_doc = urlopen("http://cdfuberaba.auttran.com/ajax/fulltable.php?codlinha=100&city=UBEN&d=").read()
   #print(page)
   #print(page.status_code)
   #print(page.content)
-  soup = BeautifulSoup(page.content, 'html.parser')
+  soup = BeautifulSoup(html_doc, 'html.parser')
   print(soup.prettify())
 
   #TESTES
