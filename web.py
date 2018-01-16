@@ -1,47 +1,33 @@
-#disponivel em: https://codigosimples.net/2017/05/15/criando-uma-api-de-filmes-em-cartaz-usando-python-e-heroku/
-#PARTE1
 from flask import Flask, jsonify, request
 from bs4 import BeautifulSoup
 from urllib.request import urlopen, Request
-import requests
-import os
+import os   
 
-#PARTE2
 app = Flask(__name__)
 
-#PARTE3
+#Criar GetByID: http://blog.luisrei.com/articles/flaskrest.html
+
 @app.route('/api/v1/filmes', methods=['GET'])
 def filmes():
-  page = requests.get("http://cdfuberaba.auttran.com/ajax/fulltable.php?codlinha=100&city=UBEN&d=")
-  #print(page)
-  #print(page.status_code)
-  #print(page.content)
-  soup = BeautifulSoup(page.content, 'html.parser')
-  print(soup.prettify())
+    html_doc = urlopen("http://www.adorocinema.com/filmes/numero-cinemas/").read()
+    soup = BeautifulSoup(html_doc, "html.parser")
 
-  #TESTES
-  #Pegando o sentido do Onibus e ultima atualização
-  temporeal = {}
-  todos = []
-  for nome in soup.find_all("td", class_="tidtd1"):
-      temporeal[nome.text] = []
-      todos.append(nome.text)
-      print(temporeal)
+    data = []
+    for dataBox in soup.find_all("div", class_="card card-entity card-entity-list cf"):
+        nomeObj = dataBox.find("h2", class_="meta-title")
+        imgObj = dataBox.find(class_="thumbnail ")
+        sinopseObj = dataBox.find("div", class_="synopsis")
+        dataObj = dataBox.find(class_="meta-body").find(class_="meta-body-item meta-body-info")
 
-  #Pegando os pontos e os horários
-  tabelas = []
-  for coluna in soup.find_all("td", class_="tidtd2"):
-      tabela = []
-      for linha in coluna.find_all("tr", class_="inttr1"):
-          horario_previsto = linha.find("td", class_="inttd1_0").text
-          ponto = linha.find("td", class_="inttd1_2").text
-          dici = [horario_previsto, ponto]
-          tabela.append(dici)
-      tabelas.append(tabela)
-  print(tabelas)
-  return jsonify({'filmes': tabelas})
+        data.append({ 'nome': nomeObj.text.strip(),
+                        'poster' : imgObj.img['data-src'].strip(),
+                        'sinopse' : sinopseObj.text.strip(),
+                        'data' :  dataObj.text[1:23].strip().replace('/',' ')})
+                
+    return jsonify({'filmes': data})
 
-#PARTE4
 if __name__ == '__main__':
-  port = int(os.environ.get('PORT', 5000))
-  app.run(host='0.0.0.0', port=port)
+    # Bind to PORT if defined, otherwise default to 5000.
+    port = int(os.environ.get('PORT', 5000))
+    # Tem que ser 0.0.0.0 para rodar no Heroku
+    app.run(host='127.0.0.1', port=port)
